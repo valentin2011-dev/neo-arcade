@@ -11,6 +11,10 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- Remove this unused field if an earlier draft of the schema created it.
+-- Profiles are publicly readable, so private contact details must not live here.
+alter table public.profiles drop column if exists recovery_email;
+
 create table if not exists public.player_progress (
   user_id uuid primary key references auth.users(id) on delete cascade,
   xp integer not null default 0 check (xp >= 0),
