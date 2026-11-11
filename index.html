@@ -15,7 +15,7 @@
   <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
   <header class="topbar">
     <a class="brand" href="#" aria-label="NEO ARCADE accueil"><span class="brand-mark">N</span><span>NEO<span class="brand-light"> ARCADE</span></span></a>
-    <div class="top-actions"><span class="online-state"><i></i><span id="connection-label">SYSTÈME PRÊT</span></span><button class="icon-button" id="sound-toggle" aria-label="Activer ou couper le son" title="Son">♫</button></div>
+    <div class="top-actions"><button class="account-button" id="account-open">CONNEXION</button><span class="account-name" id="account-name" hidden></span><span class="online-state"><i></i><span id="connection-label">SYSTÈME PRÊT</span></span><button class="icon-button" id="sound-toggle" aria-label="Activer ou couper le son" title="Son">♫</button></div>
   </header>
   <main class="shell">
     <section class="hero">
@@ -38,7 +38,25 @@
     <footer><span>NEO ARCADE <b>© 2026</b></span><span>BUILT TO PLAY. DESIGNED TO LAST.</span><button id="reset-data" class="text-button">RÉINITIALISER LES DONNÉES</button></footer>
   </main>
   <div class="modal-backdrop" id="game-modal" hidden><section class="game-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-top"><span class="eyebrow" id="modal-kicker">GAME SESSION</span><button id="close-modal" class="icon-button" aria-label="Fermer">×</button></div><h2 id="modal-title">REACTION</h2><div id="game-area" class="game-area"></div><p id="game-message" class="game-message" aria-live="polite"></p><div class="modal-footer"><span id="game-hint">READY PLAYER ONE</span><span id="game-xp">+ XP À GAGNER</span></div></section></div>
+  <section class="auth-backdrop" id="auth-modal" hidden>
+    <div class="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <div class="modal-top"><span class="eyebrow">PLAYER ID / NEO NETWORK</span><button class="icon-button" id="auth-close" aria-label="Fermer">×</button></div>
+      <h2 id="auth-title">REJOINDRE L'ARCADE</h2>
+      <p class="auth-description">Crée ton compte avec un pseudonyme et un mot de passe. Aucun nom réel ni e-mail n'est demandé.</p>
+      <div class="auth-tabs"><button type="button" class="auth-tab active" id="auth-tab-signup">CRÉER UN COMPTE</button><button type="button" class="auth-tab" id="auth-tab-login">SE CONNECTER</button></div>
+      <label class="auth-label" for="auth-username">PSEUDONYME</label>
+      <input id="auth-username" class="auth-input" autocomplete="username" minlength="3" maxlength="20" placeholder="ex : neo_player" />
+      <small class="auth-help">3 à 20 caractères : lettres minuscules, chiffres et _</small>
+      <label class="auth-label" for="auth-password">MOT DE PASSE</label>
+      <input id="auth-password" class="auth-input" type="password" autocomplete="new-password" minlength="8" placeholder="8 caractères minimum" />
+      <p class="auth-error" id="auth-error" role="alert"></p>
+      <button class="auth-submit" id="auth-submit">CRÉER MON COMPTE <span>→</span></button>
+      <p class="auth-footnote">Prototype sans récupération de mot de passe : conserve-le en lieu sûr. Ne réutilise pas ton mot de passe personnel.</p>
+    </div>
+  </section>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
   <script src="./app.js" defer></script>
 </body>
 </html>
