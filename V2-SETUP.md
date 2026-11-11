@@ -1,24 +1,29 @@
 # NEO ARCADE V2 — backend setup
 
-This branch prepares the Supabase data layer. The existing stable app remains on `main`.
+This branch prepares the Supabase data layer. The stable V1 remains on `main`.
 
-## What this foundation provides
-- Unique player handles (3–20 characters: lowercase letters, digits and underscores).
+## Current backend foundation
+- Unique player handles: 3–20 characters, lowercase letters, digits and underscores.
 - Private per-player progression storage for cross-device sync.
 - Public score rows for future leaderboards.
 - Battle records and a Realtime-enabled battles table.
-- Row Level Security policies so a player cannot read another player's private progression.
+- Row Level Security policies.
+- A database trigger that creates a profile and an empty progression row when a new Auth user is created.
 
-## Setup (parent/guardian should supervise)
-1. Create a Supabase project.
-2. Open **SQL Editor**, paste and run `supabase/schema.sql`.
-3. In **Authentication → Providers → Email**, disable email confirmation if using username-only sign-in with an internal login alias. Supabase Auth's password system still needs an email-shaped login identifier; the app can derive a non-deliverable internal identifier from the username. This means password recovery cannot work by itself.
-4. If you want password recovery, add and verify a real recovery email flow before enabling it. Do not collect a recovery address unless you implement and test the recovery process.
-5. Copy `config.example.js` to `config.js`, then add the project URL and publishable/anon key. Never use the service_role key in frontend code.
-6. Add `config.js` to the app's load order before the application script. Do not commit real project secrets to a public repository.
+## Supabase setup
+1. Open **SQL Editor** and run `supabase/schema.sql`.
+2. In **Authentication → Sign In / Providers**, keep **Email** enabled and **Allow new users to sign up** enabled.
+3. For the username-only prototype, turn **Confirm email** off and save. This is required because the prototype derives a non-deliverable email-shaped Auth identifier from the username.
+4. The planned login identifier is `lowercase_username@neo-arcade.invalid`. The `.invalid` domain is intentionally non-deliverable. Users therefore cannot receive password-reset emails. Do not advertise account recovery until a real verified recovery method has been implemented.
+5. Use pseudonyms only; do not ask players for real names. Handles must match `^[a-z0-9_]{3,20}$`.
+6. Configure the app with the project URL and the publishable/anon key. Never use a service_role or secret key in browser code.
 
-## Important security note
-The policies here are a starting point, not a finished anti-cheat system. Browser-submitted scores can be forged. Before running public online competitions, validate scores and battle state changes in trusted server-side functions, apply rate limits, and review the policies. Do not treat client-side checks as security.
+## Important security and product limitations
+- Disabling email confirmation is a deliberate prototype trade-off, not a production-ready account system.
+- If a player forgets their password, there is no email-based recovery in this prototype. Consider adding an optional verified recovery email or another secure recovery method before a public launch.
+- Never store plaintext passwords yourself. Password authentication must be handled by Supabase Auth.
+- The RLS policies are a starting point, not a finished anti-cheat system. Browser-submitted scores can be forged. Before public online competitions, validate scores and battle state transitions in trusted server-side functions and apply rate limits.
+- A public profile query must not expose private contact information. The schema does not store recovery email addresses.
 
-## Current status
-The current production app on `main` still uses localStorage. This branch deliberately does not silently switch the live app to an unconfigured backend. Authentication UI, tested cloud sync, the two new games, and both battle modes still need implementation and end-to-end testing after a Supabase project is configured.
+## Current implementation status
+The current app files on this branch still contain the V1 gameplay and localStorage progression. This commit improves the database setup only; it does **not** yet implement the signup/login screens, cloud sync, new games, or Battle modes. Those must be added and tested before V2 is considered playable.
