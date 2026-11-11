@@ -113,7 +113,7 @@ create trigger on_neo_arcade_user_created
   for each row execute procedure public.handle_new_neo_arcade_user();
 
 -- Enable Realtime for online duels, only if not already published.
-do $
+do $$
 begin
   if not exists (
     select 1 from pg_publication_tables
@@ -123,4 +123,4 @@ begin
   ) then
     alter publication supabase_realtime add table public.battles;
   end if;
-end $;
+end $$;
