@@ -2,7 +2,7 @@
 "use strict";
 const KEY="neo-arcade-v1";
 const $=s=>document.querySelector(s);
-const defaults={xp:0,played:0,bests:{reaction:null,memory:null,rush:null},wins:{reaction:0,memory:0,rush:0},sound:true};
+const defaults={xp:0,played:0,bests:{reaction:null,memory:null,rush:null,snake:null,aim:null},wins:{reaction:0,memory:0,rush:0,snake:0,aim:0},sound:true,avatar:1,theme:1,rgb:true};
 let data;
 try{data={...defaults,...JSON.parse(localStorage.getItem(KEY)||"{}")};data.bests={...defaults.bests,...(data.bests||{})};data.wins={...defaults.wins,...(data.wins||{})}}catch{data={...defaults,bests:{...defaults.bests},wins:{...defaults.wins}}}
 const achievements=[
@@ -24,12 +24,13 @@ function render(){
  $("#best-score").textContent=[data.bests.reaction,data.bests.memory,data.bests.rush].filter(x=>x!==null).length?Math.max(...[data.bests.reaction,data.bests.memory,data.bests.rush].filter(x=>x!==null)):"—";
  $("#achievement-count").textContent=achievements.filter(a=>a.test()).length+"/6";$("#next-level").textContent=lv+1;$("#xp-progress-label").textContent=progress+" / 100 XP";$("#xp-progress").style.width=progress+"%";
  $("#best-reaction").textContent=data.bests.reaction===null?"—":data.bests.reaction+" ms";$("#best-memory").textContent=data.bests.memory===null?"—":data.bests.memory+" coups";$("#best-rush").textContent=data.bests.rush===null?"—":data.bests.rush+" s";
+ $("#best-score").textContent=[data.bests.reaction,data.bests.memory,data.bests.rush,data.bests.snake,data.bests.aim].filter(x=>x!==null).length?Math.max(...[data.bests.reaction,data.bests.memory,data.bests.rush,data.bests.snake,data.bests.aim].filter(x=>x!==null)):"—";
  $("#achievements").innerHTML=achievements.map(a=>'<div class="achievement '+(a.test()?"unlocked":"")+'"><span class="achievement-icon">'+a.icon+'</span><div><strong>'+a.name+'</strong><small>'+a.desc+'</small></div></div>').join("");
  $("#sound-toggle").textContent=data.sound?"♫":"♪";$("#sound-toggle").style.opacity=data.sound?"1":".5";
 }
 function award(game,score,xp){const before=achievements.filter(a=>a.test()).length;data.played++;data.wins[game]=(data.wins[game]||0)+1;if(data.bests[game]===null||score<data.bests[game])data.bests[game]=score;data.xp+=xp;save();render();beep(880,.13);const unlocked=achievements.filter(a=>a.test()).length-before;toast("+"+xp+" XP"+(unlocked?" • NOUVEAU SUCCÈS !":""));return xp}
 const modal=$("#game-modal"),area=$("#game-area"),message=$("#game-message");
-function openGame(game){modal.hidden=false;document.body.style.overflow="hidden";$("#modal-title").textContent=({reaction:"REACTION",memory:"MEMORY",rush:"NUMBER RUSH"})[game];$("#modal-kicker").textContent="GAME SESSION / "+game.toUpperCase();$("#game-hint").textContent="READY PLAYER ONE";$("#game-xp").textContent="XP À GAGNER";message.textContent="";({reaction:startReaction,memory:startMemory,rush:startRush})[game]()}
+function openGame(game){if(game==="battle"){openBattle();return}modal.hidden=false;document.body.style.overflow="hidden";$("#modal-title").textContent=({reaction:"REACTION",memory:"MEMORY",rush:"NUMBER RUSH",snake:"NEON SNAKE",aim:"NEON AIM"})[game];$("#modal-kicker").textContent="GAME SESSION / "+game.toUpperCase();$("#game-hint").textContent="READY PLAYER ONE";$("#game-xp").textContent="XP À GAGNER";message.textContent="";({reaction:startReaction,memory:startMemory,rush:startRush,snake:startSnake,aim:startAim})[game]()}
 function closeGame(){modal.hidden=true;document.body.style.overflow="";area.replaceChildren()}
 $("#close-modal").addEventListener("click",closeGame);modal.addEventListener("click",e=>{if(e.target===modal)closeGame()});document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!modal.hidden)closeGame()});
 document.querySelectorAll("[data-game]").forEach(b=>b.addEventListener("click",()=>openGame(b.dataset.game)));
@@ -43,14 +44,58 @@ function startMemory(){
  tiles.forEach((tile,i)=>tile.addEventListener("click",()=>{if(lock||tile.classList.contains("revealed")||tile.classList.contains("matched"))return;tile.textContent=deck[i];tile.classList.add("revealed");beep(500);if(first===null){first=i;return}moves++;if(deck[first]===deck[i]){tiles[first].classList.add("matched");tile.classList.add("matched");matched+=2;first=null;beep(850);if(matched===deck.length){const xp=Math.max(35,100-Math.max(0,moves-8)*4);message.textContent="Toutes les paires trouvées en "+moves+" coups !";$("#game-hint").textContent=moves+" COUPS";$("#game-xp").textContent="+"+xp+" XP";award("memory",moves,xp);tiles.forEach(t=>t.disabled=true)}}else{lock=true;const prev=first;first=null;setTimeout(()=>{tiles[prev].textContent="?";tile.textContent="?";tiles[prev].classList.remove("revealed");tile.classList.remove("revealed");lock=false},700)}}));
  message.textContent="Trouve les 8 paires. Chaque coup compte.";
 }
+
+function startAim(){
+ let left=20,score=0,active=false,timer;
+ area.innerHTML='<div class="aim-field" id="aim-field"><button class="game-action" id="aim-start">START / 20 SECONDES</button></div>';
+ const field=$("#aim-field");
+ $("#aim-start").onclick=()=>{if(active)return;active=true;field.innerHTML="";const clock=setInterval(()=>{left--;$("#game-hint").textContent=left+" SECONDES";if(left<=0){clearInterval(clock);active=false;field.innerHTML='<div class="result-box"><strong>'+score+'</strong><p>cibles touchées</p><button class="game-action" id="aim-again">REJOUER</button></div>';const xp=Math.max(15,score*5);$("#game-xp").textContent="+"+xp+" XP";message.textContent="Session terminée.";award("aim",score,xp);$("#aim-again").onclick=startAim}},1000);function spawn(){if(!active)return;field.innerHTML="";const t=document.createElement("button");t.className="aim-target";t.setAttribute("aria-label","Cible");t.style.left=Math.random()*80+"%";t.style.top=Math.random()*65+"%";t.onclick=()=>{if(!active)return;score++;beep(800);$("#game-hint").textContent=score+" TOUCHES / "+left+"s";spawn()};field.append(t)}spawn();$("#game-hint").textContent="20 SECONDES"};message.textContent="Clique sur les cibles le plus vite possible.";
+}
+function startSnake(){
+ let snake=[ [5,5],[4,5],[3,5] ],dir=[1,0],food=[8,5],score=0,live=false,tick;
+ area.innerHTML='<div><div class="snake-board" id="snake-board"></div><p class="muted-note">Flèches du clavier ou boutons ci-dessous.</p><div class="snake-controls"><button class="game-action" data-dir="0,-1">↑</button><div><button class="game-action" data-dir="-1,0">←</button> <button class="game-action" data-dir="0,1">↓</button> <button class="game-action" data-dir="1,0">→</button></div></div><button class="game-action" id="snake-start">DÉMARRER</button></div>';
+ const board=$("#snake-board");function draw(){board.innerHTML="";for(let y=0;y<12;y++)for(let x=0;x<12;x++){const d=document.createElement("i");d.className="snake-cell"+(snake.some(p=>p[0]===x&&p[1]===y)?" snake":"")+(food[0]===x&&food[1]===y?" food":"");board.append(d)}}
+ function turn(x,y){if(x!==-dir[0]||y!==-dir[1])dir=[x,y]}
+ area.querySelectorAll("[data-dir]").forEach(b=>b.onclick=()=>turn(...b.dataset.dir.split(",").map(Number)));
+ function end(){live=false;clearInterval(tick);const xp=score*8+15;message.textContent="Partie terminée — "+score+" cellules.";$("#game-xp").textContent="+"+xp+" XP";award("snake",score,xp);$("#snake-start").disabled=false}
+ function step(){const head=[snake[0][0]+dir[0],snake[0][1]+dir[1]];if(head[0]<0||head[0]>11||head[1]<0||head[1]>11||snake.some(p=>p[0]===head[0]&&p[1]===head[1]))return end();snake.unshift(head);if(head[0]===food[0]&&head[1]===food[1]){score++;food=[Math.floor(Math.random()*12),Math.floor(Math.random()*12)];$("#game-hint").textContent=score+" CELLULES"}else snake.pop();draw()}
+ $("#snake-start").onclick=()=>{if(live)return;live=true;$("#snake-start").disabled=true;tick=setInterval(step,180)};document.onkeydown=e=>{if(e.key==="ArrowUp")turn(0,-1);if(e.key==="ArrowDown")turn(0,1);if(e.key==="ArrowLeft")turn(-1,0);if(e.key==="ArrowRight")turn(1,0)};draw();message.textContent="Évite les murs et ta propre queue.";
+}
+function startLocalBattle(){
+ let player=1,state="wait",start=0,timer;
+ area.innerHTML='<div class="result-box"><strong>PLAYER 1 VS PLAYER 2</strong><p>Chacun joue à son tour. Attends le signal vert puis clique.</p><button class="battle-pad" id="battle-pad">PLAYER 1 — PRÊT ?</button></div>';
+ const pad=$("#battle-pad"),scores=[];
+ function round(){state="wait";pad.disabled=false;pad.textContent="PLAYER "+player+" — ATTENDS LE VERT";pad.style.background="#49243a";timer=setTimeout(()=>{state="go";start=performance.now();pad.style.background="#07534a";pad.textContent="CLIQUE !"},1200+Math.random()*1800)}
+ pad.onclick=()=>{if(state==="wait"){clearTimeout(timer);pad.textContent="FAUX DÉPART !";pad.disabled=true;scores.push(9999);next();return}if(state==="go"){scores.push(Math.round(performance.now()-start));pad.disabled=true;next()}};
+ function next(){if(player===1){player=2;setTimeout(round,900)}else{const [p1,p2]=scores;pad.style.background="";pad.textContent="P1 : "+p1+" ms  /  P2 : "+p2+" ms";message.textContent=p1===p2?"ÉGALITÉ !":(p1<p2?"PLAYER 1 GAGNE !":"PLAYER 2 GAGNE !");$("#game-hint").textContent="BATTLE TERMINÉ";$("#game-xp").textContent="DUEL LOCAL";}}
+ round();
+}
+$("#local-battle").addEventListener("click",()=>openGame("battle"));
+const oldOpenGame=openGame;
+function openBattle(){modal.hidden=false;document.body.style.overflow="hidden";$("#modal-title").textContent="BATTLE ARENA";$("#modal-kicker").textContent="LOCAL DUEL";$("#game-hint").textContent="PLAYER 1";$("#game-xp").textContent="DUEL";message.textContent="";startLocalBattle()}
+
 function startRush(){
  let nums=Array.from({length:16},(_,i)=>i+1).sort(()=>Math.random()-.5),next=1,started=0,done=false;
  area.innerHTML='<div class="rush-board">'+nums.map(n=>'<button class="rush-tile" data-n="'+n+'">'+n+'</button>').join("")+'</div>';const tiles=[...area.querySelectorAll("button")];
  tiles.forEach(tile=>tile.addEventListener("click",()=>{if(done)return;const n=Number(tile.dataset.n);if(n!==next){message.textContent="Cherche le "+next+" !";beep(220);return}if(!started)started=performance.now();tile.disabled=true;next++;beep(650+n*15);message.textContent=(next<=16?"Prochain nombre : "+next:"");if(next===17){done=true;const sec=Math.max(1,Math.round((performance.now()-started)/100)/10);const xp=sec<12?100:sec<20?75:sec<30?55:35;message.textContent="Terminé en "+sec.toFixed(1)+" secondes !";$("#game-hint").textContent=sec.toFixed(1)+" SECONDES";$("#game-xp").textContent="+"+xp+" XP";award("rush",Math.round(sec*10),xp)}}));
  message.textContent="Clique sur les nombres de 1 à 16 dans l'ordre.";
 }
+
+const themes=["#63f5e5","#b49aff","#ff6ac1","#9cff57","#ffd166","#78c8ff","#ff657a","#7cff8a","#ff9c6e","#d9e1f2"];
+function applyPersonal(){const root=document.documentElement;root.style.setProperty("--cyan",themes[(data.theme||1)-1]);document.body.classList.toggle("rgb-enabled",data.rgb!==false);$("#avatar-choice").value=String(data.avatar||1);$("#theme-choice").value=String(data.theme||1);$("#rgb-toggle").checked=data.rgb!==false;const icon=["⚡","👾","🤖","🦊","🐼","👽","🐸","🦄","🐲","💎"][(data.avatar||1)-1];$(".level-chip").firstChild.textContent=icon+" LVL ";}
+$("#avatar-choice").onchange=e=>{data.avatar=Number(e.target.value);save();applyPersonal()};
+$("#theme-choice").onchange=e=>{data.theme=Number(e.target.value);save();applyPersonal()};
+$("#rgb-toggle").onchange=e=>{data.rgb=e.target.checked;save();applyPersonal()};
+$("#wallpaper-upload").onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.size>2500000){toast("Image trop lourde (maximum 2,5 Mo)");return}const reader=new FileReader();reader.onload=()=>{localStorage.setItem("neo-wallpaper",reader.result);document.body.style.backgroundImage='url("'+reader.result+'")';document.body.classList.add("custom-wallpaper")};reader.readAsDataURL(file)};
+$("#wallpaper-clear").onclick=()=>{localStorage.removeItem("neo-wallpaper");document.body.style.backgroundImage="";document.body.classList.remove("custom-wallpaper")};
+const recordsModal=$("#records-modal");
+$("#records-open").onclick=()=>{const entries=Object.entries(data.bests).map(([k,v])=>[k,v]).filter(x=>x[1]!==null);$("#records-content").innerHTML=entries.length?entries.map(([k,v])=>'<div class="record-row"><b>'+k.toUpperCase()+'</b><span>'+v+'</span></div>').join(""):'Aucun record pour le moment.';recordsModal.hidden=false};
+$("#records-close").onclick=()=>recordsModal.hidden=true;
+recordsModal.onclick=e=>{if(e.target===recordsModal)recordsModal.hidden=true};
+function renderLocalBoard(){$("#leaderboard-list").innerHTML='<b>TON CLASSEMENT PERSONNEL</b><br>LVL '+level(data.xp)+' · '+data.xp+' XP · '+data.played+' parties'}
 $("#sound-toggle").addEventListener("click",()=>{data.sound=!data.sound;save();render();toast(data.sound?"Son activé":"Son coupé")});
 $("#reset-data").addEventListener("click",()=>{if(confirm("Effacer tous tes XP, records et succès sur cet appareil ? Cette action est irréversible.")){data={...defaults,bests:{...defaults.bests},wins:{...defaults.wins}};save();render();toast("Données réinitialisées") }});
+const savedWallpaper=localStorage.getItem("neo-wallpaper");if(savedWallpaper){document.body.style.backgroundImage='url("'+savedWallpaper+'")';document.body.classList.add("custom-wallpaper")}applyPersonal();renderLocalBoard();
 window.addEventListener("online",()=>{$("#connection-label").textContent="SYSTÈME EN LIGNE"});window.addEventListener("offline",()=>{$("#connection-label").textContent="MODE HORS LIGNE"});
 
 /* NEO ARCADE V2 — account and cloud progression */
@@ -159,5 +204,5 @@ if(config&&window.supabase?.createClient&&config.SUPABASE_URL&&config.SUPABASE_A
 }
 showAccount();
 \nif("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").then(()=>{$("#offline-status").textContent="CACHE HORS LIGNE ACTIVÉ";}).catch(()=>{$("#offline-status").textContent="CACHE HORS LIGNE NON DISPONIBLE"});
-$("#connection-label").textContent=navigator.onLine?"SYSTÈME EN LIGNE":"MODE HORS LIGNE";render();
+$("#connection-label").textContent=navigator.onLine?"SYSTÈME EN LIGNE":"MODE HORS LIGNE";render();renderLocalBoard();
 })();
