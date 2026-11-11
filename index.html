@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080b18">
+  <meta name="description" content="NEO ARCADE — une mini-arcade futuriste, jouable partout, même hors ligne.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./assets/icon-192.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <title>NEO ARCADE — Play beyond limits</title>
+</head>
+<body>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="NEO ARCADE accueil"><span class="brand-mark">N</span><span>NEO<span class="brand-light"> ARCADE</span></span></a>
+    <div class="top-actions"><span class="online-state"><i></i><span id="connection-label">SYSTÈME PRÊT</span></span><button class="icon-button" id="sound-toggle" aria-label="Activer ou couper le son" title="Son">♫</button></div>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow"><span class="eyebrow-line"></span> ARCADE SYSTEM / 001</p><h1>PLAY BEYOND<br><span>LIMITS.</span></h1><p class="hero-sub">Trois défis. Une seule mission : battre tes records.<br>Joue, progresse et construis ta légende.</p><div class="hero-buttons"><a class="primary-button" href="#games">EXPLORER LES JEUX <span>↗</span></a><span class="micro-note">NO WIFI? NO PROBLEM.</span></div></div>
+      <div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="core"><div class="core-inner">N<span>°</span></div></div><div class="art-label label-top">NEURAL<br>ENGINE <b>ONLINE</b></div><div class="art-label label-bottom">EST. 2026 <b>///</b> LEVEL UP</div><div class="spark spark-one"></div><div class="spark spark-two"></div></div>
+    </section>
+    <section class="profile-panel">
+      <div class="profile-heading"><div><p class="eyebrow">PLAYER PROFILE</p><h2>TON ESPACE DE JEU</h2></div><div class="level-chip">LVL <strong id="level-number">1</strong></div></div>
+      <div class="stats-grid"><div class="stat"><span class="stat-icon">✦</span><div><strong id="xp-total">0</strong><small>XP TOTAL</small></div></div><div class="stat"><span class="stat-icon">◈</span><div><strong id="games-played">0</strong><small>PARTIES</small></div></div><div class="stat"><span class="stat-icon">⌁</span><div><strong id="best-score">—</strong><small>MEILLEUR SCORE</small></div></div><div class="stat"><span class="stat-icon">♛</span><div><strong id="achievement-count">0/6</strong><small>SUCCÈS</small></div></div></div>
+      <div class="xp-track"><div class="xp-caption"><span>PROGRESSION VERS LE NIVEAU <b id="next-level">2</b></span><span id="xp-progress-label">0 / 100 XP</span></div><div class="progress-bar"><span id="xp-progress"></span></div></div>
+    </section>
+    <section class="games-section" id="games"><div class="section-heading"><div><p class="eyebrow">SELECT YOUR CHALLENGE</p><h2>CHOOSE YOUR GAME<span class="accent">.</span></h2></div><span class="section-index">01 — 03</span></div>
+      <div class="game-grid">
+        <article class="game-card reaction-card"><div class="card-visual visual-reaction"><div class="target-ring"><span>⚡</span></div><span class="visual-code">REFLEX.exe</span></div><div class="card-content"><div class="card-meta"><span class="tag">RÉFLEXES</span><span class="best-label">RECORD <b id="best-reaction">—</b></span></div><h3>REACTION</h3><p>Teste tes réflexes. Attends le signal et clique le plus vite possible.</p><button class="play-button" data-game="reaction">JOUER <span>→</span></button></div></article>
+        <article class="game-card memory-card"><div class="card-visual visual-memory"><div class="mini-cards"><i>✦</i><i>◈</i><i>⌘</i><i>✦</i></div><span class="visual-code">MEMORY.sys</span></div><div class="card-content"><div class="card-meta"><span class="tag">MÉMOIRE</span><span class="best-label">RECORD <b id="best-memory">—</b></span></div><h3>MEMORY</h3><p>Retrouve toutes les paires. Concentre-toi et mémorise chaque symbole.</p><button class="play-button" data-game="memory">JOUER <span>→</span></button></div></article>
+        <article class="game-card rush-card"><div class="card-visual visual-rush"><div class="number-cloud"><b>03</b><b>01</b><b>04</b><b>02</b></div><span class="visual-code">NUMBER.run</span></div><div class="card-content"><div class="card-meta"><span class="tag">VITESSE</span><span class="best-label">RECORD <b id="best-rush">—</b></span></div><h3>NUMBER RUSH</h3><p>Retrouve les nombres dans l'ordre. Le chrono tourne : à toi de jouer.</p><button class="play-button" data-game="rush">JOUER <span>→</span></button></div></article>
+      </div>
+    </section>
+    <section class="bottom-grid"><div class="achievements-panel"><div class="section-heading compact"><div><p class="eyebrow">MILESTONES</p><h2>SUCCÈS</h2></div><span class="section-index">02</span></div><div id="achievements" class="achievement-list"></div></div><div class="system-panel"><p class="eyebrow">SYSTEM STATUS</p><h2>READY FOR<br><span>ANYWHERE.</span></h2><p>NEO ARCADE fonctionne sur iPhone, iPad, Mac et PC. Tes progrès sont enregistrés sur cet appareil.</p><div class="system-status"><i></i><span id="offline-status">MODE HORS LIGNE DISPONIBLE APRÈS INSTALLATION</span></div></div></section>
+    <footer><span>NEO ARCADE <b>© 2026</b></span><span>BUILT TO PLAY. DESIGNED TO LAST.</span><button id="reset-data" class="text-button">RÉINITIALISER LES DONNÉES</button></footer>
+  </main>
+  <div class="modal-backdrop" id="game-modal" hidden><section class="game-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-top"><span class="eyebrow" id="modal-kicker">GAME SESSION</span><button id="close-modal" class="icon-button" aria-label="Fermer">×</button></div><h2 id="modal-title">REACTION</h2><div id="game-area" class="game-area"></div><p id="game-message" class="game-message" aria-live="polite"></p><div class="modal-footer"><span id="game-hint">READY PLAYER ONE</span><span id="game-xp">+ XP À GAGNER</span></div></section></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
