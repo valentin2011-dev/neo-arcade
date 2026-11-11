@@ -30,8 +30,9 @@ function render(){
 }
 function award(game,score,xp){const before=achievements.filter(a=>a.test()).length;data.played++;data.wins[game]=(data.wins[game]||0)+1;if(data.bests[game]===null||(game==="snake"||game==="aim"?score>data.bests[game]:score<data.bests[game]))data.bests[game]=score;data.xp+=xp;save();render();beep(880,.13);const unlocked=achievements.filter(a=>a.test()).length-before;toast("+"+xp+" XP"+(unlocked?" • NOUVEAU SUCCÈS !":""));return xp}
 const modal=$("#game-modal"),area=$("#game-area"),message=$("#game-message");
-function openGame(game){if(game==="battle"){openBattle();return}modal.hidden=false;document.body.style.overflow="hidden";$("#modal-title").textContent=({reaction:"REACTION",memory:"MEMORY",rush:"NUMBER RUSH",snake:"NEON SNAKE",aim:"NEON AIM"})[game];$("#modal-kicker").textContent="GAME SESSION / "+game.toUpperCase();$("#game-hint").textContent="READY PLAYER ONE";$("#game-xp").textContent="XP À GAGNER";message.textContent="";({reaction:startReaction,memory:startMemory,rush:startRush,snake:startSnake,aim:startAim})[game]()}
-function closeGame(){modal.hidden=true;document.body.style.overflow="";area.replaceChildren()}
+let activeGameCleanup=()=>{};
+function openGame(game){activeGameCleanup();activeGameCleanup=()=>{};if(game==="battle"){openBattle();return}modal.hidden=false;document.body.style.overflow="hidden";$("#modal-title").textContent=({reaction:"REACTION",memory:"MEMORY",rush:"NUMBER RUSH",snake:"NEON SNAKE",aim:"NEON AIM"})[game];$("#modal-kicker").textContent="GAME SESSION / "+game.toUpperCase();$("#game-hint").textContent="READY PLAYER ONE";$("#game-xp").textContent="XP À GAGNER";message.textContent="";({reaction:startReaction,memory:startMemory,rush:startRush,snake:startSnake,aim:startAim})[game]()}
+function closeGame(){activeGameCleanup();activeGameCleanup=()=>{};modal.hidden=true;document.body.style.overflow="";area.replaceChildren()}
 $("#close-modal").addEventListener("click",closeGame);modal.addEventListener("click",e=>{if(e.target===modal)closeGame()});document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!modal.hidden)closeGame()});
 document.querySelectorAll("[data-game]").forEach(b=>b.addEventListener("click",()=>openGame(b.dataset.game)));
 function startReaction(){
@@ -46,15 +47,16 @@ function startMemory(){
 }
 
 function startAim(){
- let left=20,score=0,active=false,timer;
+ let left=20,score=0,active=false,timer,clock=null;
+ activeGameCleanup=()=>{active=false;if(clock)clearInterval(clock)};
  area.innerHTML='<div class="aim-field" id="aim-field"><button class="game-action" id="aim-start">START / 20 SECONDES</button></div>';
  const field=$("#aim-field");
- $("#aim-start").onclick=()=>{if(active)return;active=true;field.innerHTML="";const clock=setInterval(()=>{left--;$("#game-hint").textContent=left+" SECONDES";if(left<=0){clearInterval(clock);active=false;field.innerHTML='<div class="result-box"><strong>'+score+'</strong><p>cibles touchées</p><button class="game-action" id="aim-again">REJOUER</button></div>';const xp=Math.max(15,score*5);$("#game-xp").textContent="+"+xp+" XP";message.textContent="Session terminée.";award("aim",score,xp);$("#aim-again").onclick=startAim}},1000);function spawn(){if(!active)return;field.innerHTML="";const t=document.createElement("button");t.className="aim-target";t.setAttribute("aria-label","Cible");t.style.left=Math.random()*80+"%";t.style.top=Math.random()*65+"%";t.onclick=()=>{if(!active)return;score++;beep(800);$("#game-hint").textContent=score+" TOUCHES / "+left+"s";spawn()};field.append(t)}spawn();$("#game-hint").textContent="20 SECONDES"};message.textContent="Clique sur les cibles le plus vite possible.";
+ $("#aim-start").onclick=()=>{if(active)return;active=true;field.innerHTML="";clock=setInterval(()=>{left--;$("#game-hint").textContent=left+" SECONDES";if(left<=0){clearInterval(clock);active=false;field.innerHTML='<div class="result-box"><strong>'+score+'</strong><p>cibles touchées</p><button class="game-action" id="aim-again">REJOUER</button></div>';const xp=Math.max(15,score*5);$("#game-xp").textContent="+"+xp+" XP";message.textContent="Session terminée.";award("aim",score,xp);$("#aim-again").onclick=startAim}},1000);function spawn(){if(!active)return;field.innerHTML="";const t=document.createElement("button");t.className="aim-target";t.setAttribute("aria-label","Cible");t.style.left=Math.random()*80+"%";t.style.top=Math.random()*65+"%";t.onclick=()=>{if(!active)return;score++;beep(800);$("#game-hint").textContent=score+" TOUCHES / "+left+"s";spawn()};field.append(t)}spawn();$("#game-hint").textContent="20 SECONDES"};message.textContent="Clique sur les cibles le plus vite possible.";
 }
 function startSnake(){
  let snake=[ [5,5],[4,5],[3,5] ],dir=[1,0],food=[8,5],score=0,live=false,tick;
  area.innerHTML='<div><div class="snake-board" id="snake-board"></div><p class="muted-note">Flèches du clavier ou boutons ci-dessous.</p><div class="snake-controls"><button class="game-action" data-dir="0,-1">↑</button><div><button class="game-action" data-dir="-1,0">←</button> <button class="game-action" data-dir="0,1">↓</button> <button class="game-action" data-dir="1,0">→</button></div></div><button class="game-action" id="snake-start">DÉMARRER</button></div>';
- const board=$("#snake-board");function draw(){board.innerHTML="";for(let y=0;y<12;y++)for(let x=0;x<12;x++){const d=document.createElement("i");d.className="snake-cell"+(snake.some(p=>p[0]===x&&p[1]===y)?" snake":"")+(food[0]===x&&food[1]===y?" food":"");board.append(d)}}
+ const board=$("#snake-board");activeGameCleanup=()=>{live=false;clearInterval(tick);document.onkeydown=null};function draw(){board.innerHTML="";for(let y=0;y<12;y++)for(let x=0;x<12;x++){const d=document.createElement("i");d.className="snake-cell"+(snake.some(p=>p[0]===x&&p[1]===y)?" snake":"")+(food[0]===x&&food[1]===y?" food":"");board.append(d)}}
  function turn(x,y){if(x!==-dir[0]||y!==-dir[1])dir=[x,y]}
  area.querySelectorAll("[data-dir]").forEach(b=>b.onclick=()=>turn(...b.dataset.dir.split(",").map(Number)));
  function end(){live=false;clearInterval(tick);const xp=score*8+15;message.textContent="Partie terminée — "+score+" cellules.";$("#game-xp").textContent="+"+xp+" XP";award("snake",score,xp);$("#snake-start").disabled=false}
@@ -62,12 +64,13 @@ function startSnake(){
  $("#snake-start").onclick=()=>{if(live)return;live=true;$("#snake-start").disabled=true;tick=setInterval(step,180)};document.onkeydown=e=>{if(e.key==="ArrowUp")turn(0,-1);if(e.key==="ArrowDown")turn(0,1);if(e.key==="ArrowLeft")turn(-1,0);if(e.key==="ArrowRight")turn(1,0)};draw();message.textContent="Évite les murs et ta propre queue.";
 }
 function startLocalBattle(){
- let player=1,state="wait",start=0,timer;
+ let player=1,state="wait",start=0,timer,nextTimer;
+ activeGameCleanup=()=>{clearTimeout(timer);clearTimeout(nextTimer)};
  area.innerHTML='<div class="result-box"><strong>PLAYER 1 VS PLAYER 2</strong><p>Chacun joue à son tour. Attends le signal vert puis clique.</p><button class="battle-pad" id="battle-pad">PLAYER 1 — PRÊT ?</button></div>';
  const pad=$("#battle-pad"),scores=[];
  function round(){state="wait";pad.disabled=false;pad.textContent="PLAYER "+player+" — ATTENDS LE VERT";pad.style.background="#49243a";timer=setTimeout(()=>{state="go";start=performance.now();pad.style.background="#07534a";pad.textContent="CLIQUE !"},1200+Math.random()*1800)}
  pad.onclick=()=>{if(state==="wait"){clearTimeout(timer);pad.textContent="FAUX DÉPART !";pad.disabled=true;scores.push(9999);next();return}if(state==="go"){scores.push(Math.round(performance.now()-start));pad.disabled=true;next()}};
- function next(){if(player===1){player=2;setTimeout(round,900)}else{const [p1,p2]=scores;pad.style.background="";pad.textContent="P1 : "+p1+" ms  /  P2 : "+p2+" ms";message.textContent=p1===p2?"ÉGALITÉ !":(p1<p2?"PLAYER 1 GAGNE !":"PLAYER 2 GAGNE !");$("#game-hint").textContent="BATTLE TERMINÉ";$("#game-xp").textContent="DUEL LOCAL";}}
+ function next(){if(player===1){player=2;nextTimer=setTimeout(round,900)}else{const [p1,p2]=scores;pad.style.background="";pad.textContent="P1 : "+p1+" ms  /  P2 : "+p2+" ms";message.textContent=p1===p2?"ÉGALITÉ !":(p1<p2?"PLAYER 1 GAGNE !":"PLAYER 2 GAGNE !");$("#game-hint").textContent="BATTLE TERMINÉ";$("#game-xp").textContent="DUEL LOCAL";}}
  round();
 }
 $("#local-battle").addEventListener("click",()=>openGame("battle"));
