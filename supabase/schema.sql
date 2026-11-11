@@ -87,14 +87,13 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   chosen_username text;
 begin
   chosen_username := lower(coalesce(new.raw_user_meta_data ->> 'username', ''));
 
-  if chosen_username !~ '^[a-z0-9_]{3,20}
- then
+  if chosen_username !~ '^[a-z0-9_]{3,20}$' then
     raise exception 'Invalid NEO ARCADE username';
   end if;
 
@@ -106,7 +105,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists on_neo_arcade_user_created on auth.users;
 create trigger on_neo_arcade_user_created
