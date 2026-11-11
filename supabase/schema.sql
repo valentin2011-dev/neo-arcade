@@ -5,7 +5,6 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text not null unique check (username = lower(username) and username ~ '^[a-z0-9_]{3,20}$'),
   display_name text not null default '',
-  recovery_email text,
   avatar_id integer not null default 1 check (avatar_id between 1 and 10),
   theme_id integer not null default 1 check (theme_id between 1 and 10),
   rgb_enabled boolean not null default true,
@@ -77,5 +76,48 @@ create policy "Players can create battles" on public.battles for insert with che
 drop policy if exists "Participants can update battles" on public.battles;
 create policy "Participants can update battles" on public.battles for update using (auth.uid() = host_id or auth.uid() = guest_id) with check (auth.uid() = host_id or auth.uid() = guest_id);
 
--- Enable Realtime for online duels.
-alter publication supabase_realtime add table public.battles;
+-- Create a private profile and progress row automatically after signup.
+-- The app must pass { username: "<lowercase_handle>" } in signup user metadata.
+create or replace function public.handle_new_neo_arcade_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  chosen_username text;
+begin
+  chosen_username := lower(coalesce(new.raw_user_meta_data ->> 'username', ''));
+
+  if chosen_username !~ '^[a-z0-9_]{3,20}
+ then
+    raise exception 'Invalid NEO ARCADE username';
+  end if;
+
+  insert into public.profiles (id, username, display_name)
+  values (new.id, chosen_username, chosen_username);
+
+  insert into public.player_progress (user_id)
+  values (new.id);
+
+  return new;
+end;
+$;
+
+drop trigger if exists on_neo_arcade_user_created on auth.users;
+create trigger on_neo_arcade_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_neo_arcade_user();
+
+-- Enable Realtime for online duels, only if not already published.
+do $
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'battles'
+  ) then
+    alter publication supabase_realtime add table public.battles;
+  end if;
+end $;
